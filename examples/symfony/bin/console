@@ -1,0 +1,5 @@
+#!/usr/bin/env php
+<?php
+
+array_shift($_SERVER['argv']);
+echo implode(' ', $_SERVER['argv']);
