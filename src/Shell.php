@@ -67,12 +67,34 @@ class Shell
     }
 
     /**
-     * @return string
+     * @param bool $includeArgs Whether or not include command arguments
+
+     * @return string|false
      */
-    public static function php()
+    public static function php($includeArgs = true)
     {
+        $finder = new ExecutableFinder();
         $phpFinder = new PhpExecutableFinder();
-        return $phpFinder->find();
+
+        $args = $phpFinder->findArguments();
+        $args = $includeArgs && $args ? ' '.implode(' ', $args) : '';
+
+        if (defined('PHP_BINDIR')) {
+            foreach (array('', 'exe') as $suffix) {
+                $php = PHP_BINDIR . DIRECTORY_SEPARATOR . 'php' . $suffix;
+                if (is_executable($php)) {
+                    return $php.$args;
+                }
+            }
+        }
+
+        $php = $phpFinder->find(false);
+
+        if ($php) {
+            return $php.$args;
+        }
+
+        return false;
     }
 
     /**

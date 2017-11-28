@@ -36,7 +36,7 @@ class PhpDecorator extends AbstractDecorator
         }
 
         return array_merge(
-            array($phpFinder->find(false)),
+            array(Shell::php(false)),
             $phpFinder->findArguments(),
             $args,
             parent::command($command)
