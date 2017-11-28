@@ -69,7 +69,9 @@ class Builder
      */
     public function getProcessBuilder()
     {
-        return new ProcessBuilder($this->getCommand());
+        $builder = new ProcessBuilder($this->getCommand());
+        $builder->setTimeout(0);
+        return $builder;
     }
 
     /**
