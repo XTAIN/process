@@ -80,7 +80,7 @@ class Shell
         $args = $includeArgs && $args ? ' '.implode(' ', $args) : '';
 
         if (defined('PHP_BINDIR')) {
-            foreach (array('', 'exe') as $suffix) {
+            foreach (array('', '.exe') as $suffix) {
                 $php = PHP_BINDIR . DIRECTORY_SEPARATOR . 'php' . $suffix;
                 if (is_executable($php)) {
                     return $php.$args;
