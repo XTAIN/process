@@ -102,7 +102,7 @@ class DaemonProcess
         $cmd = trim($nohup . ' ' . $cmd . ' ' . Shell::escape(
             $stdin,
             $stdout
-        ) . ' &>/dev/null &');
+        ) . ' > /dev/null 2>&1 &');
 
         proc_close(proc_open($cmd, array(), $pipes));
 
