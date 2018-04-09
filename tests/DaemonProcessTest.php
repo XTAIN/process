@@ -3,7 +3,6 @@
 namespace XTAIN\Tests\Process;
 
 use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
 use XTAIN\Process\Builder;
 use XTAIN\Process\Decorator\ShellDecorator;
 use XTAIN\Process\DaemonProcess;
@@ -28,14 +27,15 @@ class DaemonProcessTest extends \PHPUnit\Framework\TestCase
     public function testRun()
     {
         $builder = new Builder('sleep 5; echo 1', new ShellDecorator());
-        $nohup = new DaemonProcess($builder->getProcessBuilder());
+        $nohup = new DaemonProcess($builder->getProcess());
         $this->doTest($nohup);
     }
 
     public function testRunEmulated()
     {
         $builder = new Builder('sleep 5; echo 1', new ShellDecorator());
-        $nohup = new DaemonProcess($builder->getProcessBuilder(), false);
+        $nohup = new DaemonProcess($builder->getProcess(), false);
         $this->doTest($nohup);
     }
+
 }

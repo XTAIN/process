@@ -5,7 +5,6 @@ namespace XTAIN\Process;
 use Composer\Autoload\ClassLoader;
 use Symfony\Component\Process\InputStream;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
 use XTAIN\Process\Daemon\Data;
 
 class DaemonProcess
@@ -13,14 +12,19 @@ class DaemonProcess
     const RUNNER = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'runner.php';
 
     /**
-     * @var ProcessBuilder
+     * @var Process
      */
-    protected $builder;
+    protected $process;
 
     /**
      * @var bool
      */
     protected $usePcntl;
+
+    /**
+     * @var string
+     */
+    protected $tempDirectory;
 
     /**
      * @var int
@@ -30,13 +34,18 @@ class DaemonProcess
     /**
      * NohupProcess constructor.
      *
-     * @param ProcessBuilder $builder
-     * @param boolean        $usePcntl
+     * @param Process $process
+     * @param boolean $usePcntl
+     * @param string  $tempDirectory
      */
-    public function __construct(ProcessBuilder $builder, $usePcntl = true)
+    public function __construct(Process $process, $usePcntl = true, $tempDirectory = null)
     {
-        $this->builder = $builder;
+        $this->process = $process;
         $this->usePcntl = $usePcntl;
+        $this->tempDirectory = $tempDirectory;
+        if ($tempDirectory === null) {
+            $this->tempDirectory = sys_get_temp_dir();
+        }
     }
 
     /**
@@ -89,8 +98,8 @@ class DaemonProcess
      */
     protected function emulateFork($cmd, Data $data)
     {
-        $stdin = tempnam(sys_get_temp_dir(), 'dae_proc_stdout');
-        $stdout = tempnam(sys_get_temp_dir(), 'dae_proc_stdout');
+        $stdin = tempnam($this->tempDirectory, 'dae_proc_stdin');
+        $stdout = tempnam($this->tempDirectory, 'dae_proc_stdout');
 
         $nohup = Shell::which('nohup');
         if ($nohup === null) {
@@ -98,6 +107,10 @@ class DaemonProcess
         }
 
         file_put_contents($stdin, $this->getPayload($data));
+
+        if (!file_exists($stdin)) {
+            throw new ProcessException('could not create stdin file');
+        }
 
         $cmd = trim($nohup . ' ' . $cmd . ' ' . Shell::escape(
             $stdin,
@@ -136,8 +149,7 @@ class DaemonProcess
 
     public function run()
     {
-        $process = $this->builder->getProcess();
-        $dto = new Daemon\Data($process);
+        $dto = new Daemon\Data($this->process);
         $fork = $this->usePcntl && function_exists('pcntl_fork') && function_exists('posix_setsid');
 
         $cmd = Shell::escape(Shell::php(), self::RUNNER);

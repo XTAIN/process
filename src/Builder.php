@@ -3,7 +3,6 @@
 namespace XTAIN\Process;
 
 use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
 use XTAIN\Process\Decorator\DefaultDecorator;
 
 class Builder
@@ -65,21 +64,13 @@ class Builder
     }
 
     /**
-     * @return ProcessBuilder
-     */
-    public function getProcessBuilder()
-    {
-        $builder = new ProcessBuilder($this->getCommand());
-        $builder->setTimeout(0);
-        return $builder;
-    }
-
-    /**
      * @return Process
      */
     public function getProcess()
     {
-        return $this->getProcessBuilder()->getProcess();
+        $process = new Process($this->getCommand());
+        $process->setTimeout(0);
+        return $process;
     }
 
     /**
@@ -87,6 +78,6 @@ class Builder
      */
     public function getDaemon()
     {
-        return new DaemonProcess($this->getProcessBuilder());
+        return new DaemonProcess($this->getBuilder());
     }
 }

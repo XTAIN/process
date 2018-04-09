@@ -3,7 +3,6 @@
 namespace XTAIN\Tests\Process;
 
 use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
 use XTAIN\Process\Builder;
 
 class BuilderTest extends AbstractBuilderTest
