@@ -64,11 +64,25 @@ class Builder
     }
 
     /**
+     * @return string
+     */
+    public function getEscapedCommand()
+    {
+        $command = '';
+
+        foreach ($this->getCommand() as $item) {
+            $command .= Shell::escape($item) . ' ';
+        }
+
+        return trim($command);
+    }
+
+    /**
      * @return Process
      */
     public function getProcess()
     {
-        $process = new Process($this->getCommand());
+        $process = new Process($this->getEscapedCommand());
         $process->setTimeout(0);
         return $process;
     }
@@ -78,6 +92,6 @@ class Builder
      */
     public function getDaemon()
     {
-        return new DaemonProcess($this->getBuilder());
+        return new DaemonProcess($this->getProcess());
     }
 }
