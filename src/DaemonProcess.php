@@ -11,6 +11,8 @@ class DaemonProcess
 {
     const RUNNER = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'runner.php';
 
+    const FORK = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'fork.php';
+
     /**
      * @var Process
      */
@@ -91,6 +93,15 @@ class DaemonProcess
     }
 
     /**
+     * @return bool
+     */
+    protected function supportsFork()
+    {
+        $check = new Process(Shell::escape(Shell::php(), self::FORK));
+        return $check->run() === 0;
+    }
+
+    /**
      * @param string $cmd
      * @param Data   $data
      *
@@ -113,9 +124,9 @@ class DaemonProcess
         }
 
         $cmd = trim($nohup . ' ' . $cmd . ' ' . Shell::escape(
-            $stdin,
-            $stdout
-        ) . ' > /dev/null 2>&1 &');
+                $stdin,
+                $stdout
+            ) . ' > /dev/null 2>&1 &');
 
         proc_close(proc_open($cmd, array(), $pipes));
 
@@ -150,7 +161,7 @@ class DaemonProcess
     public function run()
     {
         $dto = new Daemon\Data($this->process);
-        $fork = $this->usePcntl && function_exists('pcntl_fork') && function_exists('posix_setsid');
+        $fork = $this->usePcntl && self::supportsFork();
 
         $cmd = Shell::escape(Shell::php(), self::RUNNER);
 
