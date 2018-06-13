@@ -2,10 +2,12 @@
 
 namespace XTAIN\Process;
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Process\Process;
 use XTAIN\Process\Decorator\DefaultDecorator;
 
-class Builder
+class Builder implements LoggerAwareInterface
 {
     /**
      * @var string
@@ -16,6 +18,11 @@ class Builder
      * @var DecoratorInterface
      */
     protected $decorator;
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * Builder constructor.
@@ -33,6 +40,14 @@ class Builder
 
         $this->decorator = $decorator;
         $this->command = $command;
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
     }
 
     /**
@@ -92,6 +107,12 @@ class Builder
      */
     public function getDaemon()
     {
-        return new DaemonProcess($this->getProcess());
+        $daemon = new DaemonProcess($this->getProcess());
+
+        if ($this->logger !== null) {
+            $daemon->setLogger($this->logger);
+        }
+
+        return $daemon;
     }
 }

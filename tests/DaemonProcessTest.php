@@ -7,6 +7,7 @@ use XTAIN\Process\Builder;
 use XTAIN\Process\Decorator\ShellDecorator;
 use XTAIN\Process\DaemonProcess;
 use XTAIN\Process\Shell;
+use XTAIN\Process\SimpleLogger;
 
 class DaemonProcessTest extends \PHPUnit\Framework\TestCase
 {
@@ -24,18 +25,47 @@ class DaemonProcessTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($nohup->isRunning());
     }
 
-    public function testRun()
+    /**
+     * @param bool $useFork
+     *
+     * @dataProvider forkProvider
+     */
+    public function testRun($useFork = false)
     {
         $builder = new Builder('sleep 5; echo 1', new ShellDecorator());
-        $nohup = new DaemonProcess($builder->getProcess());
+        $nohup = new DaemonProcess($builder->getProcess(), $useFork);
         $this->doTest($nohup);
     }
 
-    public function testRunEmulated()
+    /**
+     * @param bool $useFork
+     *
+     * @dataProvider forkProvider
+     */
+    public function testRunWithLog($useFork = false)
     {
-        $builder = new Builder('sleep 5; echo 1', new ShellDecorator());
-        $nohup = new DaemonProcess($builder->getProcess(), false);
-        $this->doTest($nohup);
+        $tmplog = tempnam(sys_get_temp_dir(), 'proctest');
+        $logger = new SimpleLogger($tmplog);
+
+        $builder = new Builder('sleep 5; echo 1234; sleep 5; echo fofo', new ShellDecorator());
+        $nohup = new DaemonProcess($builder->getProcess(), $useFork);
+        $nohup->setChildLogger($logger);
+        $nohup->run();
+        $nohup->wait();
+        sleep(1);
+
+        $this->assertEquals("info:1234\n\ninfo:fofo\n\n", file_get_contents($tmplog));
+    }
+
+    /**
+     * @return bool[]
+     */
+    public static function forkProvider()
+    {
+        return array(
+            array(true),
+            array(false)
+        );
     }
 
 }

@@ -3,11 +3,13 @@
 namespace XTAIN\Process;
 
 use Composer\Autoload\ClassLoader;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Process\InputStream;
 use Symfony\Component\Process\Process;
 use XTAIN\Process\Daemon\Data;
 
-class DaemonProcess
+class DaemonProcess implements LoggerAwareInterface
 {
     const RUNNER = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'runner.php';
 
@@ -34,6 +36,16 @@ class DaemonProcess
     protected $childPid;
 
     /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $childLogger;
+
+    /**
      * NohupProcess constructor.
      *
      * @param Process $process
@@ -48,6 +60,22 @@ class DaemonProcess
         if ($tempDirectory === null) {
             $this->tempDirectory = sys_get_temp_dir();
         }
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function setChildLogger(LoggerInterface $logger)
+    {
+        $this->childLogger = $logger;
     }
 
     /**
@@ -76,6 +104,12 @@ class DaemonProcess
      */
     protected function fork($cmd, Data $data)
     {
+        if ($this->logger !== null) {
+            $this->logger->debug('Start process using fork with command {cmd}', array(
+                'cmd' => $cmd
+            ));
+        }
+
         $input = new InputStream();
         $bgProcess = new Process($cmd);
         $bgProcess->setInput($input);
@@ -86,7 +120,17 @@ class DaemonProcess
         $pid = trim($bgProcess->getOutput());
 
         if (empty($pid)) {
+            if ($this->logger !== null) {
+                $this->logger->warning('Starting process failed');
+            }
+
             return -1;
+        }
+
+        if ($this->logger !== null) {
+            $this->logger->debug('Started process with pid {pid}', array(
+                'pid' => $pid
+            ));
         }
 
         return $pid;
@@ -109,6 +153,12 @@ class DaemonProcess
      */
     protected function emulateFork($cmd, Data $data)
     {
+        if ($this->logger !== null) {
+            $this->logger->debug('Start process using emulate fork with command {cmd}', array(
+                'cmd' => $cmd
+            ));
+        }
+
         $stdin = tempnam($this->tempDirectory, 'dae_proc_stdin');
         $stdout = tempnam($this->tempDirectory, 'dae_proc_stdout');
 
@@ -152,7 +202,17 @@ class DaemonProcess
         unlink($stdout);
 
         if ($pid !== null) {
+            if ($this->logger !== null) {
+                $this->logger->debug('Started process with pid {pid}', array(
+                    'pid' => $pid
+                ));
+            }
+
             return $pid;
+        }
+
+        if ($this->logger !== null) {
+            $this->logger->warning('Starting process failed');
         }
 
         return -1;
@@ -160,7 +220,7 @@ class DaemonProcess
 
     public function run()
     {
-        $dto = new Daemon\Data($this->process);
+        $dto = new Daemon\Data($this->process, $this->childLogger);
         $fork = $this->usePcntl && self::supportsFork();
 
         $cmd = Shell::escape(Shell::php(), self::RUNNER);

@@ -2,12 +2,20 @@
 
 namespace XTAIN\Process;
 
-class BuilderFactory
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+
+class BuilderFactory implements LoggerAwareInterface
 {
     /**
      * @var array
      */
     protected $decorators = array();
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * BuilderFactory constructor.
@@ -26,6 +34,20 @@ class BuilderFactory
      */
     public function create($command)
     {
-        return new Builder($command, Builder::chain($this->decorators));
+        $builder = new Builder($command, Builder::chain($this->decorators));
+
+        if ($this->logger !== null) {
+            $builder->setLogger($this->logger);
+        }
+
+        return $builder;
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
     }
 }

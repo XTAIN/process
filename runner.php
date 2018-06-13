@@ -5,10 +5,25 @@ $fork = function_exists('pcntl_fork') && function_exists('posix_setsid');
 function mainthead($autoload, $dto) {
     require_once $autoload;
 
+    /** @var \XTAIN\Process\Daemon\Data $dto */
     $dto = unserialize($dto);
 
-    $dto->getProcess()->run();
-    $dto->getProcess()->wait();
+    $logger = $dto->getLogger();
+    $process = $dto->getProcess();
+
+    if ($logger !== null) {
+        $process->run(function ($out, $data) use($logger) {
+            if ($out === \Symfony\Component\Process\Process::OUT) {
+                $logger->info($data, ['pid' => getmypid()]);
+            } else {
+                $logger->warning($data, ['pid' => getmypid()]);
+            }
+        });
+    } else {
+        $process->run();
+    }
+
+    $process->wait();
 }
 
 if ($fork && count($_SERVER['argv']) == 1) {
@@ -27,7 +42,7 @@ if ($fork && count($_SERVER['argv']) == 1) {
     }
 
     if (posix_setsid() === -1) {
-         exit('could not setsid');
+        exit('could not setsid');
     }
 
     fclose(STDIN);
