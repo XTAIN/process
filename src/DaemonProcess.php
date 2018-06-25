@@ -63,6 +63,22 @@ class DaemonProcess implements LoggerAwareInterface
     }
 
     /**
+     * @param boolean $enabled
+     */
+    public function disablePcntl()
+    {
+        $this->usePcntl = false;
+    }
+
+    /**
+     * @param boolean $enabled
+     */
+    public function enablePcntl()
+    {
+        $this->usePcntl = true;
+    }
+
+    /**
      * @param LoggerInterface $logger
      */
     public function setLogger(LoggerInterface $logger)
@@ -162,9 +178,12 @@ class DaemonProcess implements LoggerAwareInterface
         $stdin = tempnam($this->tempDirectory, 'dae_proc_stdin');
         $stdout = tempnam($this->tempDirectory, 'dae_proc_stdout');
 
-        $nohup = Shell::which('nohup');
+        $nohup = Shell::which('setsid');
         if ($nohup === null) {
-            $nohup = '';
+            $nohup = Shell::which('nohup');
+            if ($nohup === null) {
+                $nohup = '';
+            }
         }
 
         file_put_contents($stdin, $this->getPayload($data));
