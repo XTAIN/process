@@ -1,6 +1,7 @@
 {
     "name": "xtain/process",
     "type": "project",
+    "license": "MIT",
     "description": "Process manager for PHP and Symfony",
     "require": {
         "php": ">=5.3.9",
