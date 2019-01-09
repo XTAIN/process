@@ -1,5 +1,15 @@
 <?php
 
+if (function_exists('pcntl_signal')) {
+    pcntl_async_signals(true);
+
+    $shutdown = function() {
+        exit();
+    };
+
+    pcntl_signal(SIGTERM, $shutdown);
+}
+
 $fork = function_exists('pcntl_fork') && function_exists('posix_setsid');
 
 function mainthead($autoload, $dto) {
@@ -10,6 +20,12 @@ function mainthead($autoload, $dto) {
 
     $logger = $dto->getLogger();
     $process = $dto->getProcess();
+
+    register_shutdown_function(function() use ($process) {
+        if ($process->isRunning()) {
+            $process->stop(5);
+        }
+    });
 
     if ($logger !== null) {
         $process->run(function ($out, $data) use($logger) {
