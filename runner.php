@@ -4,6 +4,7 @@ if (function_exists('pcntl_signal')) {
     pcntl_async_signals(true);
 
     $shutdown = function() {
+        // using this workaround register_shutdown_function is triggered by the signal
         exit();
     };
 
